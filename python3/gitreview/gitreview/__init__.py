@@ -14,34 +14,41 @@ import requests
 import yaml
 import gitreview.lib.git
 import gitreview.lib.stash
+import gitreview.lib.configurate
 FORMAT = """[%(asctime)s] '%(message)s'"""
 logging.basicConfig(format=FORMAT)
 LOGGER = logging.getLogger()
-CREDSFILE = os.path.expanduser('~/.stashcreds.yaml')
 
 def do_review(args):
     ''' Defaults function, called by argparse to create a review
     '''
-    gitinfo = gitreview.lib.git.Git()
-    gitinfo.push()
-    stash = gitreview.lib.stash.Stash(args.credentials)
-    stash.submit(gitinfo.address,
-                 gitinfo.branch,
-                 gitinfo.description,
-                 gitinfo.branch,
-                 gitinfo.key,
-                 gitinfo.slug)
+    if args.configure:
+        gitreview.lib.configurate.prompt()
+    else:
+        gitinfo = gitreview.lib.git.Git()
+        gitinfo.push()
+        stash = gitreview.lib.stash.Stash(args.credentials)
+        stash.submit(gitinfo.address,
+                     gitinfo.branch,
+                     gitinfo.description,
+                     gitinfo.branch,
+                     gitinfo.key,
+                     gitinfo.slug)
 
 def gitmain():
     ''' Main function invoked at runtime
     '''
     parser = argparse.ArgumentParser('Parse arguments')
+    parser.add_argument('--configure',
+                        help='Set up your credentials/configuration file.',
+                        action='store_true',
+                        default=False)
     parser.add_argument('-t', '--target_branch',
                         help='Which git branch to target with the PR',
                         default='master')
     parser.add_argument('-c', '--credentials',
                         help='Path to stash credentials.',
-                        default=CREDSFILE)
+                        default=gitreview.lib.configurate.DEFAULTPATH)
     parser.add_argument("-v", '--verbose',
                         help="Verbose",
                         action='count',
