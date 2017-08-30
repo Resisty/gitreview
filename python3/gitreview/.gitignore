@@ -1,0 +1,10 @@
+*.pyc
+.Python
+/bin
+/include
+/lib
+pip-selfcheck.json
+*.egg-info/
+__pycache__/
+dist/
+build/
