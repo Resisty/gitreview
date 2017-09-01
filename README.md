@@ -6,6 +6,19 @@ Make PRs faster! Make PRs better?
 1. `cd bauron-sandbox/python3/gitreview`
 1. `python setup.py install`
 
+## Setup
+1. `gitreview --configure` and answer the prompts
+_OR_
+1. Create your own file as in `caveats` below, satisfying the yaml format:
+```
+---
+stashuser: stashusername #required
+stashpass: stashpassword #required
+proxy: 127.0.0.1:9000    #optional
+proxyuser: proxyusername #optional
+proxypass: proxypassword #optional
+```
+
 ## Use
 1. Make a git branch, edit stuff, make a commit!
 1. `gitreview`

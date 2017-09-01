@@ -26,8 +26,7 @@ REQJSON = {'title':'',
                                                }
                                    }
                     },
-           'locked': False,
-           'reviewers': []}
+           'locked': False}
 
 def getcreds(func):
     ''' Decorator for getting stash credentials when needed but not every time.
@@ -44,7 +43,6 @@ def getcreds(func):
                 self._proxy = userdata.get('proxy', '')
                 self._proxyuser = userdata.get('proxyuser', self._user)
                 self._proxypass = userdata.get('proxypass', self._password)
-                self._reviewers = userdata.get('reviewers', [])
         func(self, *args, **kwargs)
     return wrapper
 
@@ -66,7 +64,6 @@ class Stash(object):
         self._proxy = ''
         self._proxyuser = ''
         self._proxypass = ''
-        self._reviewers = []
     @getcreds
     def submit(self, address, title, description, branch, key, slug):
         ''' Do the actual work:
@@ -80,8 +77,6 @@ class Stash(object):
         REQJSON['fromRef']['repository']['project']['key'] = key
         REQJSON['toRef']['repository']['slug'] = slug
         REQJSON['toRef']['repository']['project']['key'] = key
-        REQJSON['reviewers'] = [{'user':{'name': reviewer}}
-                                for reviewer in self._reviewers]
         stashaddr = APIFMT.format(addr=address,
                                   key=key,
                                   slug=slug)
