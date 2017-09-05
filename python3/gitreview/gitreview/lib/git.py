@@ -48,6 +48,11 @@ class Git(object):
         self._branch = ''
         self._address = ''
     @property
+    def target(self):
+        ''' Propertize the target
+        '''
+        return self._target
+    @property
     def branch(self):
         ''' Propertize the branch
         '''

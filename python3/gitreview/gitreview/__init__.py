@@ -25,13 +25,14 @@ def do_review(args):
     if args.configure:
         gitreview.lib.configurate.prompt()
     else:
-        gitinfo = gitreview.lib.git.Git()
+        gitinfo = gitreview.lib.git.Git(target=args.target_branch)
         gitinfo.push()
         stash = gitreview.lib.stash.Stash(args.credentials)
         stash.submit(gitinfo.address,
                      gitinfo.branch,
                      gitinfo.description,
                      gitinfo.branch,
+                     gitinfo.target,
                      gitinfo.key,
                      gitinfo.slug)
 

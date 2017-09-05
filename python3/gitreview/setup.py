@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='gitreview',
-    version='0.8',
+    version='0.16',
     entry_points={
         'console_scripts': [
             'gitreview=gitreview.command_line:main'

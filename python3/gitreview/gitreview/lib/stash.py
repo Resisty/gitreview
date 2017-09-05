@@ -8,6 +8,7 @@ import yaml
 APIFMT = '''https://{addr}/rest/api/1.0/projects/{key}/\
 repos/{slug}/pull-requests'''
 LOGGER = logging.getLogger()
+REVIEWEXC = 'com.atlassian.bitbucket.pull.InvalidPullRequestReviewersException'
 REQJSON = {'title':'',
            'description':'',
            'state':'OPEN',
@@ -19,14 +20,15 @@ REQJSON = {'title':'',
                                       'project':{'key': ''}
                                      }
                       },
-           'toRef': {'id': 'refs/heads/master',
+           'toRef': {'id': 'refs/heads/{target}',
                      'repository': {'slug': '',
                                     'name': None,
                                     'project': {'key': ''
                                                }
                                    }
                     },
-           'locked': False}
+           'locked': False,
+           'reviewers': []}
 
 def getcreds(func):
     ''' Decorator for getting stash credentials when needed but not every time.
@@ -43,8 +45,16 @@ def getcreds(func):
                 self._proxy = userdata.get('proxy', '')
                 self._proxyuser = userdata.get('proxyuser', self._user)
                 self._proxypass = userdata.get('proxypass', self._password)
+                self._reviewers = userdata.get('reviewers', [])
         func(self, *args, **kwargs)
     return wrapper
+
+def reviewer_problem_maybe(response_json):
+    errors = response_json.get('errors', [])
+    for error in errors:
+        if error['exceptionName'] == REVIEWEXC:
+            return True
+    return False
 
 class StashError(Exception):
     ''' Custom error for subprocess failures
@@ -64,8 +74,9 @@ class Stash(object):
         self._proxy = ''
         self._proxyuser = ''
         self._proxypass = ''
+        self._reviewers = []
     @getcreds
-    def submit(self, address, title, description, branch, key, slug):
+    def submit(self, address, title, description, branch, target, key, slug):
         ''' Do the actual work:
                 Get git information, assemble it, make an HTTP request
         '''
@@ -77,6 +88,10 @@ class Stash(object):
         REQJSON['fromRef']['repository']['project']['key'] = key
         REQJSON['toRef']['repository']['slug'] = slug
         REQJSON['toRef']['repository']['project']['key'] = key
+        REQJSON['toRef']['id'] = (REQJSON['toRef']['id']
+                                  .format(target=target))
+        REQJSON['reviewers'] = [{'user':{'name': reviewer}}
+                                for reviewer in self._reviewers]
         stashaddr = APIFMT.format(addr=address,
                                   key=key,
                                   slug=slug)
@@ -84,6 +99,12 @@ class Stash(object):
                                 json=REQJSON,
                                 proxies=self._mkproxy(),
                                 auth=(self._user, self._password))
+        LOGGER.info('HTTP response code: %s', request.status_code)
+        LOGGER.info('Request response: "%s"', request.text)
+        if (request.status_code >= 400 and
+            reviewer_problem_maybe(request.json())):
+                self._reviewers = []
+                self.submit(address, title, description, branch, target, key, slug)
     def _mkproxy(self):
         ''' Assemble a proxy if configured
         '''
