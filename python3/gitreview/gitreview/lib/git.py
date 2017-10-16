@@ -40,6 +40,16 @@ class SubprocessError(Exception):
 class Git(object):
     ''' Abstraction of a git repository's information
     '''
+    @classmethod
+    def default_branch(cls):
+        ''' Do our best to find out the default branch, assuming there is one
+        '''
+        branch_cmd = 'git remote show origin'
+        out = run_proc(branch_cmd)
+        LOGGER.info('Output of "%s":', branch_cmd)
+        LOGGER.info('%s', out)
+        reg = re.search(r'HEAD branch: (.*)', out)
+        return reg.groups()[0]
     def __init__(self, target='master'):
         self._description = ''
         self._slug = ''

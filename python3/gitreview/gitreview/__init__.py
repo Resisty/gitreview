@@ -36,6 +36,16 @@ def do_review(args):
                      gitinfo.key,
                      gitinfo.slug)
 
+def search_default_branch():
+    ''' Try to establish the default branch from the git project if we're in
+        one
+    '''
+    try:
+        return gitreview.lib.git.Git.default_branch()
+    except gitreview.lib.git.SubprocessError:
+        #Not in a git project?
+        return 'master'
+
 def gitmain():
     ''' Main function invoked at runtime
     '''
@@ -46,7 +56,7 @@ def gitmain():
                         default=False)
     parser.add_argument('-t', '--target_branch',
                         help='Which git branch to target with the PR',
-                        default='master')
+                        default=search_default_branch())
     parser.add_argument('-c', '--credentials',
                         help='Path to stash credentials.',
                         default=gitreview.lib.configurate.DEFAULTPATH)
