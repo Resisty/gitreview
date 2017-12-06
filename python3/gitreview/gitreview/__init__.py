@@ -15,6 +15,7 @@ import yaml
 import gitreview.lib.git
 import gitreview.lib.stash
 import gitreview.lib.configurate
+import gitreview.lib.formatter
 FORMAT = """[%(asctime)s] '%(message)s'"""
 logging.basicConfig(format=FORMAT)
 LOGGER = logging.getLogger()
@@ -28,9 +29,13 @@ def do_review(args):
         gitinfo = gitreview.lib.git.Git(target=args.target_branch)
         gitinfo.push()
         stash = gitreview.lib.stash.Stash(args.credentials)
+        prformat = gitreview.lib.formatter.Formatter(args.review_format_data)
+        prformat.set_tickets(gitinfo.branch)
+        description = prformat.generate()
+        description = description or gitinfo.description
         stash.submit(gitinfo.address,
                      gitinfo.branch,
-                     gitinfo.description,
+                     description,
                      gitinfo.branch,
                      gitinfo.target,
                      gitinfo.key,
@@ -46,6 +51,24 @@ def search_default_branch():
         #Not in a git project?
         return 'master'
 
+def gitprovide_format():
+    ''' Function to create yaml data file for PR formats
+    '''
+    parser = argparse.ArgumentParser('Parse arguments')
+    parser.add_argument('-f', '--file',
+                        help='Path to create yaml data file for review \
+formats.',
+                        default=gitreview.lib.formatter.YAMLFILE)
+    parser.add_argument("-v", '--verbose',
+                        help="Verbose",
+                        action='count',
+                        default=0)
+    args = parser.parse_args()
+    levels = [logging.WARN, logging.INFO, logging.DEBUG]
+    level = levels[min(len(levels)-1, args.verbose)]
+    LOGGER.setLevel(level)
+    gitreview.lib.formatter.provide(args.file)
+
 def gitmain():
     ''' Main function invoked at runtime
     '''
@@ -60,6 +83,9 @@ def gitmain():
     parser.add_argument('-c', '--credentials',
                         help='Path to stash credentials.',
                         default=gitreview.lib.configurate.DEFAULTPATH)
+    parser.add_argument('-f', '--review_format_data',
+                        help='Path to review format yaml data.',
+                        default=gitreview.lib.formatter.YAMLFILE)
     parser.add_argument("-v", '--verbose',
                         help="Verbose",
                         action='count',
